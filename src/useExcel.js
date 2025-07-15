@@ -1,6 +1,6 @@
 import FileSaver from 'file-saver';
 import { useState } from 'react';
-import * as xlsx from 'xlsx';
+import * as xlsx from 'xlsx-js-style';
 
 const useExcel = () => {
   const [downloading, setDownloading] = useState(false);
@@ -28,50 +28,6 @@ const useExcel = () => {
     });
   };
 
-  function formatExcelCols(json) {
-    let widthArr = Object.keys(json[0]).map((key) => {
-      if (key.length <= 8) return { width: key.length + 20 };
-      return { width: key.length + 8 };
-    });
-    for (let i = 0; i < json.length; i++) {
-      let value = Object.values(json[i]);
-      for (let j = 0; j < value.length; j++) {
-        if (value[j] !== null && value[j]?.length > widthArr[j]?.width) {
-          widthArr[j].width = value[j]?.length;
-        }
-      }
-    }
-    return widthArr;
-  }
-
-  const excelExport = async (data, fileName) => {
-    setDownloading(true);
-    let sheets = { ...data };
-    const workbook = {
-      Sheets: {},
-      SheetNames: [],
-    };
-    Object.keys(sheets).forEach((sheetName) => {
-      let sheet = sheets[sheetName];
-      let worksheet = xlsx.utils.json_to_sheet(sheet);
-      let wscols = formatExcelCols(sheet);
-      worksheet['!cols'] = wscols;
-      workbook.Sheets[sheetName] = worksheet;
-      workbook.SheetNames.push(sheetName);
-    });
-
-    const excelBuffer = xlsx.write(workbook, {
-      bookType: 'xlsx',
-      type: 'array',
-    });
-    onSave(excelBuffer, fileName)
-      .then(() => setDownloading(false))
-      .catch((e) => {
-        setDownloading(false);
-        console.log(e);
-      });
-  };
-
   const onSave = (buffer, fileName) => {
     return new Promise((resolve) => {
       resolve(saveAsExcelFile(buffer, fileName));
@@ -83,8 +39,84 @@ const useExcel = () => {
     const data = new Blob([buffer], {
       type: EXCEL_TYPE,
     });
-    FileSaver.saveAs(data, `Reultados - ${fileName}`);
+    FileSaver.saveAs(data, fileName);
   };
+
+  const excelExport = async (data, fileName) => {
+    setDownloading(true);
+    let sheets = { ...data };
+    const workbook = {
+      Sheets: {},
+      SheetNames: [],
+    };
+    Object.keys(sheets).forEach((sheetName) => {
+      let sheet = sheets[sheetName];
+      let worksheet = xlsx.utils.json_to_sheet(sheet);
+      let wscols = Object.keys(sheet[0]).map((_key) => {
+        return { width: 40 };
+      });
+      worksheet['!cols'] = wscols;
+      // for (let r = 0; r <= sheet.length; r++) {
+      //   for (let i = 0; i < wscols?.length; i++) {
+      //     let cell = worksheet[xlsx.utils.encode_cell({ r, c: i })];
+      //     if (!cell?.s && r === 0) {
+      //       cell.s = {
+      //         fill: {
+      //           patternType: 'solid',
+      //           fgColor: { rgb: '611232' },
+      //         },
+      //         font: {
+      //           name: 'Calibri',
+      //           sz: 12,
+      //           color: { rgb: 'FFFFFF' },
+      //           bold: true,
+      //           italic: false,
+      //           underline: false,
+      //         },
+      //         border: {
+      //           top: { color: { rgb: 'FFFFFF' }, style: 'dashed' },
+      //           bottom: { color: { rgb: 'FFFFFF' }, style: 'dashed' },
+      //           left: { color: { rgb: 'FFFFFF' }, style: 'dashed' },
+      //           right: { color: { rgb: 'FFFFFF' }, style: 'dashed' },
+      //         },
+      //         alignment: {
+      //           wrapText: true,
+      //           vertical: 'center',
+      //           horizontal: 'center',
+      //         },
+      //       };
+      //     } else if (!cell?.s && r !== 0) {
+      //       cell.s = {
+      //         alignment: {
+      //           wrapText: true,
+      //           vertical: 'top',
+      //         },
+      //         border: {
+      //           bottom: { color: { rgb: '000000' }, style: 'thin' },
+      //           left: { color: { rgb: '000000' }, style: 'thin' },
+      //           right: { color: { rgb: '000000' }, style: 'thin' },
+      //         },
+      //       };
+      //     }
+      //   }
+      // }
+      workbook.Sheets[sheetName] = worksheet;
+      workbook.SheetNames.push(sheetName);
+    });
+
+    const excelBuffer = xlsx.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array',
+    });
+
+    onSave(excelBuffer, fileName)
+      .then(() => setDownloading(false))
+      .catch((e) => {
+        setDownloading(false);
+        console.log(e);
+      });
+  };
+
   return {
     excelReader,
     excelExport,

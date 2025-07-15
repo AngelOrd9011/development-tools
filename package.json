@@ -12,9 +12,11 @@
   "dependencies": {
     "check-layout": "file:",
     "file-saver": "2.0.5",
+    "primeflex": "^4.0.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "xlsx": "0.18.5"
+    "xlsx": "0.18.5",
+    "xlsx-js-style": "1.2.0"
   },
   "devDependencies": {
     "@eslint/js": "9.19.0",
