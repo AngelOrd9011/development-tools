@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import useExcel from '../useExcel';
-import useFetchData from '../useFetchData';
-import useFormatter from '../useFormatter';
-import useValidations from '../useValidations';
+import useExcel from '../hooks/useExcel';
+import useFetchData from '../hooks/useFetchData';
+import useFormatter from '../hooks/useFormatter';
+import useValidations from '../hooks/useValidations';
 
 export const BuscarCURP = () => {
   const { excelReader, excelExport, downloading } = useExcel();
@@ -15,14 +15,18 @@ export const BuscarCURP = () => {
 
   const sliceArray = (arr, n) => {
     const size = Math.ceil(arr.length / n);
-    return Array.from({ length: n }, (_v, i) => arr.slice(i * size, i * size + size));
+    return Array.from({ length: n }, (_v, i) =>
+      arr.slice(i * size, i * size + size)
+    );
   };
 
   const execute = async (_data) => {
     let sliceSize = 200;
     let res = await Promise.all(
       sliceArray(_data, sliceSize).map(async (item) => {
-        return fetchData(item, '/rusp/buscar-curp/').then((response) => response);
+        return fetchData(item, '/rusp/buscar-curp/').then(
+          (response) => response
+        );
       })
     );
     return res.flat();
@@ -67,7 +71,11 @@ export const BuscarCURP = () => {
       )}
       {data && !loading && (
         <div>
-          <button className="btn-download" onClick={exportData} disabled={downloading}>
+          <button
+            className="btn-download"
+            onClick={exportData}
+            disabled={downloading}
+          >
             Descargar archivo
           </button>
         </div>

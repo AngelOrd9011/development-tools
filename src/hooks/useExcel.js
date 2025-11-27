@@ -14,9 +14,13 @@ const useExcel = () => {
         });
         let result = {};
         workbook.SheetNames.forEach(function (sheetName) {
-          let arr = xlsx.utils.sheet_to_row_object_array(workbook.Sheets[sheetName], { raw: false });
+          let arr = xlsx.utils.sheet_to_row_object_array(
+            workbook.Sheets[sheetName],
+            { raw: false }
+          );
           result[sheetName] = arr;
         });
+        console.log(result);
         resolve(result);
       };
 
@@ -35,7 +39,8 @@ const useExcel = () => {
   };
 
   const saveAsExcelFile = (buffer, fileName) => {
-    let EXCEL_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
+    let EXCEL_TYPE =
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
     const data = new Blob([buffer], {
       type: EXCEL_TYPE,
     });

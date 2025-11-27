@@ -1,16 +1,11 @@
 import { useState } from 'react';
 import useExcel from '../hooks/useExcel';
 import useFetchData from '../hooks/useFetchData';
-import useFormatter from '../hooks/useFormatter';
-import useValidations from '../hooks/useValidations';
 
-export const BuscarPersonas = () => {
+export const AniosTrayectoria = () => {
   const { excelReader, excelExport, downloading } = useExcel();
-  const { validateData, loading } = useValidations();
   const { fetchData } = useFetchData();
-  const arrayToJSON = useFormatter();
   const [data, setData] = useState(null);
-  const [file, setFile] = useState(null);
   const [error, setError] = useState(null);
 
   const sliceArray = (arr, n) => {
@@ -24,7 +19,7 @@ export const BuscarPersonas = () => {
     let sliceSize = 200;
     let res = await Promise.all(
       sliceArray(_data, sliceSize).map(async (item) => {
-        return fetchData(item, '/rusp/buscar-personas/').then(
+        return fetchData(item, '/rusp/anio-trayectoria/').then(
           (response) => response
         );
       })
@@ -38,13 +33,13 @@ export const BuscarPersonas = () => {
       let file = e.target.files[0];
       await excelReader(file)
         .then(async (_data) => {
-          setFile(_data);
-          let firstPage = Object.keys(_data)[0];
-          let res = await execute(_data[firstPage]);
+          let keys = Object.keys(_data);
+          let res = await execute(_data[keys[0]]);
           setData(res);
         })
         .catch((err) => {
           console.log(err);
+          setError(err);
         });
     }
   };
@@ -52,24 +47,16 @@ export const BuscarPersonas = () => {
   const exportData = async () => {
     console.log(data);
 
-    await excelExport({ 'Personas encontradas': data }, 'Resultados');
+    await excelExport({ Resultados: data }, 'Resultados de trayectoria');
   };
 
   return (
     <div className="xlsx-cleaner-component">
       <div>
-        <h3>Buscar personas por nombre en RUSP</h3>
+        <h3>Años de trayectoria registrada en RUSP</h3>
         <input id="file" type="file" onChange={handleFileChange} />
       </div>
-      {loading && (
-        <div>
-          <div className="loader-container">
-            <div className="loader">Loading...</div>
-          </div>{' '}
-          <div className="loader-text">Procesando información...</div>
-        </div>
-      )}
-      {data && !loading && (
+      {data && (
         <div>
           <button
             className="btn-download"

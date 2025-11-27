@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import useExcel from '../useExcel';
+import useExcel from '../hooks/useExcel';
 
 export const CargarPilares = () => {
   const { excelReader } = useExcel();
@@ -15,34 +15,49 @@ export const CargarPilares = () => {
       let file = e.target.files[0];
       await excelReader(file)
         .then(async (_data) => {
-          let actividades_especificas = _data['Sheet1']
+          let actividades_especificas = _data['Hoja1']
             .filter((item) => item['No.'].length === 5)
             .map((item) => {
               return {
                 numero: item['No.'],
-                nombre: item['Eje o Estrategia'],
+                nombre: item['Estrategia'],
                 fecha_limite: { $date: '2025-12-31' },
                 pnd: item?.PND ? true : false,
                 ps: item?.PS ? true : false,
                 pepc: item?.PEPC ? true : false,
                 mir: item?.MIR ? true : false,
                 metas_individuales: item?.['Metas Individuales'] ? true : false,
-                marco_normativo: item['Marco Normativo'].split('/').map((m) => m.trim()),
+                marco_normativo: item['Marco Normativo']
+                  .split('/')
+                  .map((m) => m.trim()),
                 avance: Number(item['% Avance'] ?? 0),
               };
             });
-          let actividades_generales = _data['Sheet1']
+          let actividades_generales = _data['Hoja1']
             .filter((item) => item['No.'].length === 3)
             .map((item) => {
               return {
                 numero: item['No.'],
-                nombre: item['Eje o Estrategia'],
+                nombre: item['Estrategia'],
                 fecha_limite: { $date: '2025-12-31' },
                 avance: 0,
               };
             });
-          let pilares = _data['Sheet1'].filter((item) => item['No.'].length === 1);
-          let new_data = { actividades_generales, actividades_especificas, pilares };
+          let pilares = _data['Hoja1']
+            .filter((item) => item['No.'].length === 1)
+            .map((item) => {
+              return {
+                numero: item['No.'],
+                nombre: item['Estrategia'],
+                fecha_limite: { $date: '2025-12-31' },
+                avance: 0,
+              };
+            });
+          let new_data = {
+            actividades_generales,
+            actividades_especificas,
+            pilares,
+          };
           setData(new_data);
         })
         .catch((err) => {
@@ -53,7 +68,9 @@ export const CargarPilares = () => {
   };
 
   const exportData = (section) => {
-    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(JSON.stringify(data[section]))}`;
+    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
+      JSON.stringify(data[section])
+    )}`;
     const link = document.createElement('a');
     link.href = jsonString;
     link.download = `${section}.json`;
@@ -77,11 +94,26 @@ export const CargarPilares = () => {
       )}
       {data && !loading && (
         <div className="flex flex-wrap gap-3">
-          <button className="btn-download" onClick={() => exportData('actividades_especificas')} disabled={downloading}>
+          <button
+            className="btn-download"
+            onClick={() => exportData('actividades_especificas')}
+            disabled={downloading}
+          >
             Descargar actividades especificas
           </button>
-          <button className="btn-download" onClick={() => exportData('actividades_generales')} disabled={downloading}>
+          <button
+            className="btn-download"
+            onClick={() => exportData('actividades_generales')}
+            disabled={downloading}
+          >
             Descargar actividades generales
+          </button>
+          <button
+            className="btn-download"
+            onClick={() => exportData('pilares')}
+            disabled={downloading}
+          >
+            Descargar pilares
           </button>
         </div>
       )}

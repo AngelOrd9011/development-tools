@@ -1,4 +1,4 @@
-import { API_URL } from './constants';
+import { API_URL } from '../constants';
 
 const useFetchData = () => {
   const api_uri = API_URL;
@@ -6,7 +6,10 @@ const useFetchData = () => {
   const fetchData = async (filas, path) => {
     let data = await fetch(`${api_uri}${path}`, {
       method: 'POST',
-      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({ filas }),
     })
       .then((res) => res?.json())

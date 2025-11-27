@@ -1,12 +1,8 @@
 import { useState } from 'react';
 import useExcel from '../hooks/useExcel';
-import useFormatter from '../hooks/useFormatter';
 
-export const AnaliticoPlazas = () => {
+export const AnalisisCertificacion = () => {
   const { excelReader, excelExport } = useExcel();
-  const arrayToJSON = useFormatter();
-  const [data, setData] = useState(null);
-  const [file, setFile] = useState(null);
   const [error, setError] = useState(null);
   const [xlsx, setXlsx] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -17,12 +13,9 @@ export const AnaliticoPlazas = () => {
     setLoading(true);
     if (e.target.files) {
       let file = e.target.files[0];
-      setFile(file);
       await excelReader(file)
         .then(async (_data) => {
-          setXlsx(_data?.Hoja1);
-          let result = arrayToJSON(_data?.Hoja1);
-          setData(result);
+          setXlsx(_data);
         })
         .catch((err) => {
           console.log(err);
@@ -32,24 +25,16 @@ export const AnaliticoPlazas = () => {
   };
 
   const exportDataAsXLSX = async () => {
-    await excelExport({ 'Analitico de plazas': xlsx }, 'Analitico de plazas');
-  };
-
-  const exportData = () => {
-    const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
-      JSON.stringify(data)
-    )}`;
-    const link = document.createElement('a');
-    link.href = jsonString;
-    link.download = 'codigos_presupuestales.json';
-
-    link.click();
+    setDownloading(true);
+    await excelExport(xlsx, 'Certificación').finally(() =>
+      setDownloading(false)
+    );
   };
 
   return (
     <div className="xlsx-cleaner-component">
       <div>
-        <h3>Analítico de Plazas y Remuneraciones</h3>
+        <h3>Analisis Certificación</h3>
         <input id="file" type="file" onChange={handleFileChange} />
       </div>
       {loading && (
@@ -60,15 +45,8 @@ export const AnaliticoPlazas = () => {
           <div className="loader-text">Procesando información...</div>
         </div>
       )}
-      {data && !loading && (
+      {xlsx && !loading && (
         <div className="flex flex-wrap gap-3">
-          <button
-            className="btn-download"
-            onClick={exportData}
-            disabled={downloading}
-          >
-            Descargar archivo
-          </button>
           <button
             className="btn-download"
             onClick={exportDataAsXLSX}
