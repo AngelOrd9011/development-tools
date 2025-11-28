@@ -120,34 +120,46 @@ export const ProcesarECCO = () => {
     link.click();
   };
 
-  const onDownload = () => {
-    return new Promise((resolve, reject) => {});
+  const dataToTXT = (prop) => {
+    setDownloading(true);
+    setTimeout(async () => {
+      try {
+        let link = document.createElement('a');
+        let stringData = `${keys.toString().replaceAll(',', '|')}\n`;
+        await Promise.all(
+          data[prop].map((row, id) => {
+            console.log(id);
+            Object.keys(row).forEach((key) => {
+              stringData += `${row[key].replaceAll('\n', ' ')}|`;
+            });
+            stringData += '\n';
+          })
+        );
+        const file = new Blob(
+          [stringData.replaceAll('||\n', '\n').replaceAll('|\n', '\n')],
+          { type: 'text/plain' }
+        );
+        link.href = URL.createObjectURL(file);
+        link.download = `ecco_${prop}.txt`;
+        link.click();
+      } catch (error) {
+        console.log(error);
+      } finally {
+        console.log('end');
+        setDownloading(false);
+      }
+    }, 1000);
   };
 
-  const dataToTXT = async (prop) => {
-    try {
-      setDownloading(true);
-      let link = document.createElement('a');
-      let stringData = `${keys.toString().replaceAll(',', '|')}\n`;
-      data[prop].forEach((row, id) => {
-        Object.keys(row).forEach((key) => {
-          stringData += `${row[key].replaceAll('\n', ' ')}|`;
-        });
-        stringData += '\n';
-      });
-      const file = new Blob(
-        [stringData.replaceAll('||\n', '\n').replaceAll('|\n', '\n')],
-        { type: 'text/plain' }
-      );
-      link.href = URL.createObjectURL(file);
-      link.download = `ecco_${prop}.txt`;
-      link.click();
-    } catch (error) {
-      console.log(error);
-    } finally {
-      console.log('end');
-      setDownloading(false);
-    }
+  const Loader = ({ text }) => {
+    return (
+      <div>
+        <div className="loader-container">
+          <div className="loader">Loading...</div>
+        </div>{' '}
+        <div className="loader-text">{text}</div>
+      </div>
+    );
   };
 
   return (
@@ -156,14 +168,7 @@ export const ProcesarECCO = () => {
         <h3>Procesar ECCO</h3>
         <input id="file" type="file" onChange={handleFileChange} />
       </div>
-      {(loading || downloading) && (
-        <div>
-          <div className="loader-container">
-            <div className="loader">Loading...</div>
-          </div>{' '}
-          <div className="loader-text">Procesando información...</div>
-        </div>
-      )}
+      {loading && <Loader text="Procesando información..." />}
       {data && !loading && (
         <div className="flex flex-wrap gap-3">
           <button
@@ -176,12 +181,11 @@ export const ProcesarECCO = () => {
           <button
             className="btn-download"
             onClick={() => dataToTXT('sampling')}
-            disabled={downloading}
           >
             Descargar muestra
           </button>
           {downloading ? (
-            <span>Descargando...</span>
+            <Loader text="Descargando..." />
           ) : (
             <button
               className="btn-download"
