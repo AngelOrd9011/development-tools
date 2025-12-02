@@ -47,7 +47,7 @@ export const AnaliticoPlazas = () => {
   };
 
   return (
-    <div className="xlsx-cleaner-component">
+    <div className="main-content">
       <div>
         <h3>Analítico de Plazas y Remuneraciones</h3>
         <input id="file" type="file" onChange={handleFileChange} />

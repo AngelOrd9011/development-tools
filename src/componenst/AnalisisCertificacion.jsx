@@ -32,7 +32,7 @@ export const AnalisisCertificacion = () => {
   };
 
   return (
-    <div className="xlsx-cleaner-component">
+    <div className="main-content">
       <div>
         <h3>Analisis Certificación</h3>
         <input id="file" type="file" onChange={handleFileChange} />

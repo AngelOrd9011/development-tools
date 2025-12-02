@@ -22,17 +22,17 @@ export const ProcesarECCO = () => {
     if (file) {
       await fileReader(file, true)
         .then(async ({ data: _data, keys: _keys }) => {
-          let complete = [];
+          let total = [];
           let incomplete = [];
           await _data.forEach((i) => {
             if (hasMissingValue(i)) incomplete.push(i);
-            else complete.push(i);
+            else total.push(i);
           });
-          let men = complete.filter((i) => i.sexo === '1');
-          let women = complete.filter((i) => i.sexo === '2');
-          let nonbinary = complete.filter((i) => i.sexo === '3');
+          let hombres = total.filter((i) => i.sexo === '1');
+          let mujeres = total.filter((i) => i.sexo === '2');
+          let no_binarios = total.filter((i) => i.sexo === '3');
           let divided = {};
-          complete.forEach((i) => {
+          total.forEach((i) => {
             if (!divided.hasOwnProperty(`${i.ramo}-${i.ur}`)) {
               divided[`${i.ramo}-${i.ur}`] = [i];
             } else {
@@ -41,12 +41,23 @@ export const ProcesarECCO = () => {
           });
           let sampling = [];
           Object.keys(divided).forEach((inst) => {
-            divided[inst].forEach((_i, id) => {
-              if (id + 1 <= divided[inst].length * 0.1) sampling.push(_i);
-            });
+            let percentage = Math.ceil(divided[inst].length * 0.1);
+            let _arr = [...divided[inst]];
+            for (let i = _arr.length - 1; i > 0; i--) {
+              const j = Math.floor(Math.random() * (i + 1));
+              [_arr[i], _arr[j]] = [_arr[j], _arr[i]];
+            }
+            sampling = sampling.concat(_arr.slice(0, percentage));
           });
           setKeys(_keys);
-          setData({ complete, incomplete, men, women, nonbinary, sampling });
+          setData({
+            total,
+            incomplete,
+            hombres,
+            mujeres,
+            no_binarios,
+            sampling,
+          });
         })
         .catch((err) => {
           setError(err?.message ?? err);
@@ -56,61 +67,31 @@ export const ProcesarECCO = () => {
     }
   };
 
+  const getCounters = async (prop) => {
+    let _obj = {};
+    const descartados = ['ramo', 'ur', 'area', 'id_area', 'ordinal'];
+    await data[prop]?.forEach((item) => {
+      Object.keys(item)
+        .filter((i) => !descartados.includes(i))
+        .forEach((key) => {
+          if (!_obj[key]) {
+            _obj[key] = {};
+          }
+          const value = item[key];
+          _obj[key][value] = (_obj[key][value] || 0) + 1;
+        });
+    });
+    return _obj;
+  };
+
   const proccessData = async () => {
     const counters = {
-      hombres: {},
-      mujeres: {},
-      no_binarios: {},
-      total: {},
+      hombres: await getCounters('hombres'),
+      mujeres: await getCounters('mujeres'),
+      no_binarios: await getCounters('no_binarios'),
+      total: await getCounters('total'),
     };
-    const descartados = ['ramo', 'ur', 'area', 'id_area', 'ordinal'];
-    data.men?.forEach((item) => {
-      Object.keys(item)
-        .filter((i) => !descartados.includes(i))
-        .forEach((key) => {
-          if (!counters.hombres[key]) {
-            counters.hombres[key] = {};
-          }
-          const value = item[key];
-          counters.hombres[key][value] =
-            (counters.hombres[key][value] || 0) + 1;
-        });
-    });
-    data.women?.forEach((item) => {
-      Object.keys(item)
-        .filter((i) => !descartados.includes(i))
-        .forEach((key) => {
-          if (!counters.mujeres[key]) {
-            counters.mujeres[key] = {};
-          }
-          const value = item[key];
-          counters.mujeres[key][value] =
-            (counters.mujeres[key][value] || 0) + 1;
-        });
-    });
-    data.nonbinary?.forEach((item) => {
-      Object.keys(item)
-        .filter((i) => !descartados.includes(i))
-        .forEach((key) => {
-          if (!counters.no_binarios[key]) {
-            counters.no_binarios[key] = {};
-          }
-          const value = item[key];
-          counters.no_binarios[key][value] =
-            (counters.no_binarios[key][value] || 0) + 1;
-        });
-    });
-    data.complete?.forEach((item) => {
-      Object.keys(item)
-        .filter((i) => !descartados.includes(i))
-        .forEach((key) => {
-          if (!counters.total[key]) {
-            counters.total[key] = {};
-          }
-          const value = item[key];
-          counters.total[key][value] = (counters.total[key][value] || 0) + 1;
-        });
-    });
+
     const jsonString = `data:text/json;chatset=utf-8,${encodeURIComponent(
       JSON.stringify(counters)
     )}`;
@@ -126,15 +107,19 @@ export const ProcesarECCO = () => {
       try {
         let link = document.createElement('a');
         let stringData = `${keys.toString().replaceAll(',', '|')}\n`;
-        await Promise.all(
-          data[prop].map((row, id) => {
-            console.log(id);
+        data[prop].forEach((row, id) => {
+          if (prop === 'total' && id >= 1000000) {
             Object.keys(row).forEach((key) => {
-              stringData += `${row[key].replaceAll('\n', ' ')}|`;
+              stringData += `${row[key]?.replaceAll('\n', ' ')}|`;
             });
             stringData += '\n';
-          })
-        );
+          } else {
+            Object.keys(row).forEach((key) => {
+              stringData += `${row[key]?.replaceAll('\n', ' ')}|`;
+            });
+            stringData += '\n';
+          }
+        });
         const file = new Blob(
           [stringData.replaceAll('||\n', '\n').replaceAll('|\n', '\n')],
           { type: 'text/plain' }
@@ -143,9 +128,9 @@ export const ProcesarECCO = () => {
         link.download = `ecco_${prop}.txt`;
         link.click();
       } catch (error) {
-        console.log(error);
+        setDownloading(false);
+        setError(error?.message ?? error);
       } finally {
-        console.log('end');
         setDownloading(false);
       }
     }, 1000);
@@ -163,38 +148,42 @@ export const ProcesarECCO = () => {
   };
 
   return (
-    <div className="xlsx-cleaner-component">
+    <div className="main-content">
       <div>
         <h3>Procesar ECCO</h3>
         <input id="file" type="file" onChange={handleFileChange} />
       </div>
       {loading && <Loader text="Procesando información..." />}
       {data && !loading && (
-        <div className="flex flex-wrap gap-3">
-          <button
-            className="btn-download"
-            onClick={() => proccessData()}
-            disabled={downloading}
-          >
-            Procesar conteos
-          </button>
-          <button
-            className="btn-download"
-            onClick={() => dataToTXT('sampling')}
-          >
-            Descargar muestra
-          </button>
+        <>
           {downloading ? (
             <Loader text="Descargando..." />
           ) : (
-            <button
-              className="btn-download"
-              onClick={() => dataToTXT('complete')}
-            >
-              Descargar archivo depurado
-            </button>
+            <div className="flex flex-wrap gap-3">
+              <button className="btn-download" onClick={() => proccessData()}>
+                Procesar conteos
+              </button>
+              <button
+                className="btn-download"
+                onClick={() => dataToTXT('sampling')}
+              >
+                Descargar muestra
+              </button>
+              <button
+                className="btn-download"
+                onClick={() => dataToTXT('total')}
+              >
+                Descargar archivo depurado
+              </button>
+              <button
+                className="btn-download"
+                onClick={() => dataToTXT('incomplete')}
+              >
+                Descargar archivo de incompletas
+              </button>
+            </div>
           )}
-        </div>
+        </>
       )}
       {error}
     </div>

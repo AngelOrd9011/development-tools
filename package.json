@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--max_old_space_size=32768 vite",
-    "build": "cross-env NODE_OPTIONS=--max_old_space_size=32768 vite build",
+    "dev": "cross-env NODE_OPTIONS=--max_old_space_size=16384 vite",
+    "build": "cross-env NODE_OPTIONS=--max_old_space_size=16384 vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

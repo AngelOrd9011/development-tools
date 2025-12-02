@@ -56,7 +56,7 @@ export const BuscarIdRUSP = () => {
   };
 
   return (
-    <div className="xlsx-cleaner-component">
+    <div className="main-content">
       <div>
         <h3>Buscar ID RUSP por CURP</h3>
         <input id="file" type="file" onChange={handleFileChange} />
